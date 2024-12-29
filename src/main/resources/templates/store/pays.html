@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Payment Information</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <!-- Optional: Link to your CSS file -->
+    <style>
+        #main-content {
+            flex: 1; /* 남은 공간을 차지 */
+        }
+        .container {
+            margin: 0 auto;
+            padding: 20px;
+            max-width: 800px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        table, th, td {
+            border: 1px solid #ddd;
+        }
+
+        th, td {
+            padding: 10px;
+            text-align: center;
+        }
+
+        thead {
+            background-color: #f4f4f4;
+        }
+
+        tbody tr td[colspan="4"] {
+            text-align: center;
+            font-style: italic;
+            color: #888;
+        }
+
+        tbody tr.empty-row td {
+            height: 50px;
+        }
+    </style>
+</head>
+<body>
+<!-- Include Header -->
+<div th:insert="~{fragments/header}"></div>
+
+
+<div id="main-content" class="container">
+    <h1>결제내역</h1>
+    <table>
+        <thead>
+        <tr>
+            <th>결제상태</th>
+            <th>결제코드</th>
+            <th>가격</th>
+            <th>결제일자</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:if="${pays.isEmpty()}" class="empty-row">
+            <td colspan="4">결제내역이 없습니다.</td>
+        </tr>
+        <!-- Iterate through the pay list, only showing status 3 (결제 완료) or 4 (결제 취소) -->
+        <tr th:each="pay : ${pays}" th:if="${pay.payStatus == 3 or pay.payStatus == 4}">
+            <td th:switch="${pay.payStatus}">
+                <span th:case="3">결제 완료</span>
+                <span th:case="4">결제 취소</span>
+            </td>
+            <td>
+                <a th:href="@{/page/pay/{payCode}(payCode=${pay.payCode})}" th:text="${pay.payCode}"></a>
+            </td>
+            <td th:text="${pay.payPrice}"></td>
+            <td th:text="${#temporals.format(pay.payDate, 'yyyy-MM-dd HH:mm')}"></td>
+        </tr>
+        </tbody>
+    </table>
+</div>
+
+
+<!-- Include Header -->
+<div th:insert="~{fragments/footer}"></div>
+</body>
+</html>

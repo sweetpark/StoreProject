@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Item Details</title>
+    <style>
+        .item-detail {
+            margin: 32px auto;
+            padding: 16px;
+            max-width: 800px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+        .item-detail img {
+            max-width: 100%;
+            height: auto;
+            display: block;
+            margin: 0 auto;
+        }
+        .item-detail h2 {
+            text-align: center;
+            margin-bottom: 16px;
+        }
+        .item-detail p {
+            margin: 8px 0;
+        }
+        .price {
+            font-size: 18px;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+
+        .price .final-price {
+            font-size: 22px;
+            color: #e74c3c; /* 강조를 위한 빨간색 */
+            font-weight: bold;
+        }
+
+        .price .details {
+            font-size: 14px;
+            color: #555; /* 부가 정보는 회색으로 */
+        }
+        .actions {
+        display: flex;
+        justify-content: space-between; /* 버튼을 양옆으로 배치 */
+        margin-top: 20px;
+    }
+
+    .actions form {
+        flex: 1; /* 버튼 간격 조절 */
+        margin: 0 10px; /* 버튼 간 간격 */
+    }
+
+    .actions button {
+        width: 100%; /* 버튼이 양옆 균등하게 보이도록 설정 */
+        padding: 10px 20px;
+        font-size: 16px;
+        font-weight: bold;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        transition: background-color 0.3s, transform 0.2s; /* 애니메이션 효과 */
+    }
+
+    .actions button:hover {
+        transform: scale(1.05); /* 버튼 커지는 효과 */
+    }
+
+    .buy-now {
+        background-color: #4CAF50; /* 녹색 배경 */
+        color: white;
+    }
+
+    .buy-now:hover {
+        background-color: #45a049; /* hover 시 더 진한 녹색 */
+    }
+
+    .add-to-cart {
+        background-color: #008CBA; /* 파란색 배경 */
+        color: white;
+    }
+
+    .add-to-cart:hover {
+        background-color: #007bb5; /* hover 시 더 진한 파란색 */
+    }
+        #main-content {
+            flex: 1; /* 남은 공간을 차지 */
+        }
+    </style>
+</head>
+<body>
+
+<!-- Include Header -->
+<div th:insert="~{fragments/header}"></div>
+
+<!-- Item Detail Section -->
+<div id="main-content" class="container">
+<div class="item-detail">
+    <h2 th:text="${item.itemName}">상품 이름</h2>
+    <img th:src="@{${item.itemImage}}" alt="Item Image">
+    <p><strong>종류:</strong> <span th:text="${item.itemType}">Item Type</span></p>
+    <p><strong>제품 상세 내용:</strong> <span th:text="${item.itemDetail}">Item Details</span></p>
+    <p><strong>사용 가능 지점:</strong> <span th:text="${item.place}">Place</span></p>
+    <p><strong>유효기간:</strong> <span th:text="${item.exp}">Expiration</span></p>
+    <p class="price">
+        최종 가격: <span class="final-price" th:text="${item.price - item.salePrice} + '원'">7000원</span>
+        <span class="details">
+        (* 원가: <span th:text="${item.price} + '원'">8000원</span>, 할인 금액:
+        <span th:text="${item.salePrice} + '원'">1000원</span>)
+    </span>
+    </p>
+
+    <!-- Quantity input outside the forms -->
+    <label for="quantity">수량:</label>
+    <input type="number" name="quantity" id="quantity" value="1" min="1" required>
+
+    <div class="actions">
+        <form th:action="@{/page/pay/direct}" method="post">
+            <input type="hidden" name="itemCode" th:value="${item.itemCode}">
+            <input type="hidden" name="purchase-quantity" id="purchase-quantity" value="1">
+            <button type="submit" class="buy-now">구매하기</button>
+        </form>
+
+        <!-- 장바구니에 추가 버튼 -->
+        <button type="button" class="add-to-cart" onclick="addToCart()">장바구니에 추가</button>
+    </div>
+
+
+
+</div>
+</div>
+
+<script>
+    // Update the hidden purchase-quantity field when the quantity input changes
+    document.querySelector("#quantity").addEventListener("input", function() {
+        const quantity = document.querySelector("#quantity").value;
+        document.querySelector("#purchase-quantity").value = quantity;
+    });
+</script>
+<script>
+    function addToCart() {
+    const itemCode = parseInt(document.querySelector("input[name='itemCode']").value, 10);
+    const quantity = parseInt(document.getElementById("quantity").value, 10);
+
+    if (isNaN(itemCode) || isNaN(quantity)) {
+        alert("유효한 값이 아닙니다.");
+        return;
+    }
+
+    const data = {
+        itemCode: itemCode,
+        quantity: quantity
+    };
+
+    fetch('/api/cart', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.code === 1) {
+            alert(data.msg);  // 성공 메시지
+            window.location.href = "/page/cart";
+        } else {
+            alert("장바구니에 추가 실패: " + data.msg);
+        }
+    })
+    .catch(error => console.error('Error:', error));
+}
+
+</script>
+
+<!-- Include Footer -->
+<div th:insert="~{fragments/footer}"></div>
+
+</body>
+</html>

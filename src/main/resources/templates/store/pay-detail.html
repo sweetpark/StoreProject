@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Payment Information</title>
+    <link rel="stylesheet" href="/css/style.css"> <!-- Optional: Link to your CSS file -->
+    <style>
+        .container {
+            margin: 0 auto;
+            padding: 20px;
+            max-width: 800px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        table, th, td {
+            border: 1px solid #ddd;
+        }
+
+        th, td {
+            padding: 10px;
+            text-align: center;
+        }
+
+        thead {
+            background-color: #f4f4f4;
+        }
+
+        tbody tr td[colspan="4"] {
+            text-align: center;
+            font-style: italic;
+            color: #888;
+        }
+
+        tbody tr.empty-row td {
+            height: 50px;
+        }
+
+        .item-image {
+            width: 50px;
+            height: 50px;
+        }
+
+        .cancel-button {
+            background-color: #ff4d4d;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            cursor: pointer;
+            border-radius: 5px;
+        }
+
+        .cancel-button:hover {
+            background-color: #e60000;
+        }
+    </style>
+</head>
+
+<body>
+
+<!-- Include Header -->
+<div th:insert="~{fragments/header}"></div>
+
+<div class="container" id="main-content">
+
+    <!-- Payment Information -->
+    <div>
+        <h2>결제정보</h2>
+        <p><strong>결제코드:</strong> <span th:text="${pay.payCode}"></span></p>
+        <p><strong>결제금액:</strong> <span th:text="${pay.payPrice}"></span></p>
+        <p><strong>결제일:</strong> <span th:text="${pay.payDate}"></span></p>
+        <p><strong>결제상태:</strong>
+            <span th:switch="${pay.payStatus}">
+            <span th:case="3">결제 완료</span>
+            <span th:case="4">결제 취소</span>
+            <span th:case="*">상태 미정</span>
+        </span>
+        </p>
+        <button class="cancel-button"
+                th:if="${pay.payStatus == 3}"
+                th:data-paycode="${pay.payCode}"
+                onclick="cancelPayment(this)">
+            결제 취소
+        </button>
+    </div>
+
+    <!-- Items Purchased -->
+    <h2>구매한 상품</h2>
+    <table>
+        <thead>
+        <tr>
+            <th>상품 이미지</th>
+            <th>상품 이름</th>
+            <th>기한</th>
+            <th>가격</th>
+            <th>수량</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="payDetail, stat : ${payDetails}">
+            <td><img th:src="${items[stat.index].itemImage}" class="item-image" /></td>
+            <td th:text="${items[stat.index].itemName}"></td>
+            <td th:text="${items[stat.index].exp}"></td>
+            <td th:text="${items[stat.index].price}"></td>
+            <td th:text="${payDetail.cartQty}"></td>
+        </tr>
+        </tbody>
+    </table>
+</div>
+
+<!-- Include Footer -->
+<div th:insert="~{fragments/footer}"></div>
+
+<script>
+    function cancelPayment(button) {
+    const payCode = button.getAttribute('data-paycode');
+        fetch(`/api/pay/cancel/${payCode}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.code === 1) {
+                alert('결제가 취소되었습니다.');
+                location.reload();
+            } else if (data.code === -1) {
+                alert('결제코드가 존재하지 않거나, 이미 사용한 쿠폰이 존재합니다.');
+            } else {
+                alert('결제 취소에 실패했습니다. 다시 시도해주세요.');
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('결제 취소 중 오류가 발생했습니다.');
+        });
+    }
+</script>
+
+</body>
+</html>

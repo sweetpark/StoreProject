@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.com">
+<head>
+    <title th:text="${title}">영화예매 프로젝트</title>
+    <meta charset="UTF-8">
+    <meta name="description" content="Movie Reserve Project"/>
+    <link rel="stylesheet" href="/css/bootstrap.min.css">
+
+
+
+    <script src="/js/popper.min.js"></script>
+    <script src="/js/jquery-3.5.1.slim.min.js"></script>
+    <script src="/js/bootstrap.min.js"></script>
+
+
+    <script>
+        const onLogout = () => {
+    // 서버에 로그아웃 요청 보내기
+    fetch('/logout', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+    })
+    .then(response => {
+        if (response.ok) {
+            // 로그아웃 성공 시 클라이언트 상태 초기화
+            sessionStorage.removeItem("username");  // Remove username from session storage
+            sessionStorage.removeItem("loggedIn"); // Remove logged-in flag
+
+            // Update UI for logged out state
+            document.getElementById('navLoginLink').style.display = 'inline';
+            document.getElementById('navSignupLink').style.display = 'inline';
+            document.getElementById('navUsername').style.display = 'none';
+            document.getElementById('navReserveLink').style.display = 'inline';
+            document.getElementById('navLogoutLink').style.display = 'none';
+
+            alert("로그아웃되었습니다.");
+            window.location.href = '/'; // 로그아웃 후 메인 페이지로 리디렉션
+        } else {
+            alert("로그아웃에 실패했습니다. 다시 시도해주세요.");
+        }
+    })
+    .catch(error => {
+        console.error("로그아웃 요청 중 오류 발생:", error);
+        alert("로그아웃 요청 중 오류가 발생했습니다.");
+    });
+};
+
+// 페이지 로드 시 UI 초기화
+window.addEventListener('load', () => {
+    const username = sessionStorage.getItem('username');
+    const loggedIn = sessionStorage.getItem('loggedIn');
+
+    if (loggedIn === 'true') {
+        // Update the UI for logged-in state
+        document.getElementById('loginModal').style.display = 'none';
+        document.getElementById('navLoginLink').style.display = 'none';
+        document.getElementById('navSignupLink').style.display = 'none';
+        document.getElementById('navUsername').style.display = 'inline';
+        document.getElementById('navReserveLink').style.display = 'inline';
+        document.getElementById('navLogoutLink').style.display = 'inline';
+
+        // Update account name in the navigation bar
+        document.getElementById('navUsername').textContent = username;
+    } else {
+        // Show login/signup if not logged in
+        document.getElementById('loginModal').style.display = 'block';
+        document.getElementById('navLoginLink').style.display = 'inline';
+        document.getElementById('navSignupLink').style.display = 'inline';
+        document.getElementById('navUsername').style.display = 'none';
+        document.getElementById('navReserveLink').style.display = 'inline';
+        document.getElementById('navLogoutLink').style.display = 'none';
+    }
+});
+    </script>
+    <style>
+        .nav-item.dropdown:hover .dropdown-menu {
+            display: block;
+        }
+    </style>
+</head>
+
+<body>
+    <div th:fragment="header">
+        <header class="bg-dark text-white p-3">
+            <nav class="navbar navbar-expand-lg navbar-dark">
+                <a class="navbar-brand" href="#" th:href="@{/}">
+                    <img th:src="@{/images/logo.png}" alt="Movie Logo" style="height:40px; filter: brightness(0) invert(1);">
+                </a>
+                <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="navbarNav">
+                    <ul class="navbar-nav mr-auto">
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" th:href="@{#}" id="movieDropdown1" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">영화</a>
+                            <div class="dropdown-menu" aria-labelledby="movieDropdown">
+                                <a class="dropdown-item" th:href="@{#}">박스오피스</a>
+                                <a class="dropdown-item" th:href="@{#}">최신개봉작</a>
+                                <a class="dropdown-item" th:href="@{#}">상영예정작</a>
+                            </div>
+                        </li>
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" th:href="@{#}" id="movieDropdown2" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">극장</a>
+                            <div class="dropdown-menu" aria-labelledby="movieDropdown">
+                                <a class="dropdown-item" th:href="@{#}">서울</a>
+                                <a class="dropdown-item" th:href="@{#}">경기도</a>
+                                <a class="dropdown-item" th:href="@{#}">충청도</a>
+                                <a class="dropdown-item" th:href="@{#}">전라도</a>
+                                <a class="dropdown-item" th:href="@{#}">경상도</a>
+                            </div>
+                        </li>
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" th:href="@{#}" id="movieDropdown3" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">상점</a>
+                            <div class="dropdown-menu" aria-labelledby="movieDropdown">
+                                <a class="dropdown-item" th:href="@{/page/items}">영화티켓 / 팝콘</a>
+                            </div>
+                        </li>
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" th:href="@{#}" id="movieDropdown4" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">내정보</a>
+                            <div class="dropdown-menu" aria-labelledby="movieDropdown">
+                                <a class="dropdown-item" th:href="@{/page/pay}">결제목록</a>
+                                <a class="dropdown-item" th:href="@{/page/cart}">장바구니목록</a>
+                                <a class="dropdown-item" th:href="@{/page/coupons}">쿠폰목록</a>
+                            </div>
+                        </li>
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" th:href="@{#}" id="movieDropdown5" role="button" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">고객센터</a>
+                            <div class="dropdown-menu" aria-labelledby="movieDropdown">
+                                <a class="dropdown-item" th:href="@{#}">1:1 고객센터</a>
+                                <a class="dropdown-item" th:href="@{#}">게시판</a>
+                            </div>
+                        </li>
+                    </ul>
+                    <div class="navbar-nav">
+
+                        <a class="nav-link" id="navUsername" style="display: none;">계정명</a>
+                        <span class="text-white mx-3">|</span>
+                        <a class="nav-link btn btn-primary text-white" id="navReserveLink" th:href="@{/reserve}">간편예매</a>
+                        <span class="text-white mx-3">|</span>
+                        <a class="nav-link" id="navLogoutLink" href="#" onclick="onLogout()" style="display: none;">로그아웃</a>
+
+                        <a class="nav-link" href="#" id="navLoginLink" data-toggle="modal" data-target="#loginModal">로그인</a>
+                        <span class="text-white mx-3">|</span>
+                        <a class="nav-link" id="navSignupLink" th:href="@{/page/join}">회원가입</a>
+
+                    </div>
+                </div>
+            </nav>
+        </header>
+    </div>
+    <div th:insert="~{member/login/memberLogin}"></div>
+</body>
+</html>

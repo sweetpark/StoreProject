@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+<!--    <title th:text="${title}">영화예매 프로젝트</title>-->
+    <meta charset="UTF-8">
+    <meta name="description" content="Movie Reserve Project"/>
+    <link rel="stylesheet" href="/css/bootstrap.min.css">
+    <style>
+        /* 페이지 전체를 Flexbox 컨테이너로 설정 */
+        html, body {
+            height: 100%;
+            margin: 0;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* 메인 컨텐츠 영역 */
+        #main-content {
+            flex: 1; /* 남은 공간을 차지 */
+        }
+
+        /* 푸터 스타일 */
+        #footer {
+            background-color: #343a40;
+            color: white;
+            padding: 1rem;
+            text-align: center;
+        }
+
+        .footer-links a {
+            text-decoration: none;
+        }
+
+        .footer-links a:hover {
+            text-decoration: underline;
+        }
+    </style>
+
+</head>
+
+<body>
+<div th:fragment="footer">
+    <footer id="footer" class="bg-dark text-white py-3">
+
+        <nav class="navbar navbar-expand-lg navbar-dark">
+        <div class="collapse navbar-collapse" id="navbarNav">
+            <div class="navbar-nav">
+                <div class="navbar-nav footer-links">
+                    <a class="text-white" th:href="@{#}">이용약관</a>
+                    <span class="text-white mx-3">|</span>
+                    <a class="text-danger" th:href="@{#}">개인정보처리방침</a>
+                    <span class="text-white mx-3">|</span>
+                    <a class="text-white" th:href="@{#}">고객센터</a>
+                    <span class="text-white mx-3">|</span>
+                    <a class="text-white" th:href="@{#}">배정/편성기준</a>
+                    <span class="text-white mx-3">|</span>
+                    <a class="text-white" th:href="@{#}">사이트맵</a>
+                </div>
+            </div>
+        </div>
+        </nav>
+        <!-- Copyright -->
+        <div class="footer-copyright text-center">
+            <span>Copyright© 영화예매프로젝트. All rights reserved</span>
+        </div>
+
+    </footer>
+</div>
+</body>
+</html>

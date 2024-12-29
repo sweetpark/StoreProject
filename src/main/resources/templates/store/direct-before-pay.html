@@ -1,0 +1,205 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Item Details</title>
+    <script type="text/javascript" src="https://code.jquery.com/jquery-1.12.4.min.js"></script>
+    <script src="https://cdn.iamport.kr/v1/iamport.js"></script>
+    <style>
+        .item-detail {
+            margin: 32px auto;
+            padding: 16px;
+            max-width: 800px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+        .item-detail img {
+            max-width: 100%;
+            height: auto;
+            display: block;
+            margin: 0 auto;
+        }
+        .item-detail h2 {
+            text-align: center;
+            margin-bottom: 16px;
+        }
+        .item-detail p {
+            margin: 8px 0;
+        }
+        .price {
+            font-size: 18px;
+            font-weight: bold;
+            margin: 10px 0;
+        }
+
+        .price .final-price {
+            font-size: 22px;
+            color: #e74c3c; /* 강조를 위한 빨간색 */
+            font-weight: bold;
+        }
+
+        .price .details {
+            font-size: 14px;
+            color: #555; /* 부가 정보는 회색으로 */
+        }
+        .actions {
+        display: flex;
+        justify-content: space-between; /* 버튼을 양옆으로 배치 */
+        margin-top: 20px;
+    }
+
+    .actions form {
+        flex: 1; /* 버튼 간격 조절 */
+        margin: 0 10px; /* 버튼 간 간격 */
+    }
+
+    .actions button {
+        width: 100%; /* 버튼이 양옆 균등하게 보이도록 설정 */
+        padding: 10px 20px;
+        font-size: 16px;
+        font-weight: bold;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        transition: background-color 0.3s, transform 0.2s; /* 애니메이션 효과 */
+    }
+
+    .actions button:hover {
+        transform: scale(1.05); /* 버튼 커지는 효과 */
+    }
+
+    .buy-now {
+        background-color: #4CAF50; /* 녹색 배경 */
+        color: white;
+    }
+
+    .buy-now:hover {
+        background-color: #45a049; /* hover 시 더 진한 녹색 */
+    }
+
+    .add-to-cart {
+        background-color: #008CBA; /* 파란색 배경 */
+        color: white;
+    }
+
+    .add-to-cart:hover {
+        background-color: #007bb5; /* hover 시 더 진한 파란색 */
+    }
+        #main-content {
+            flex: 1; /* 남은 공간을 차지 */
+        }
+    </style>
+</head>
+<body>
+
+<!-- Include Header -->
+<div th:insert="~{fragments/header}"></div>
+
+<!-- Item Detail Section -->
+<div id="main-content" class="container">
+    <div class="item-detail">
+        <h2 th:text="${item.itemName}">상품 이름</h2>
+        <img th:src="@{${item.itemImage}}" alt="Item Image">
+        <p><strong>종류:</strong> <span th:text="${item.itemType}">Item Type</span></p>
+        <p><strong>제품 상세 내용:</strong> <span th:text="${item.itemDetail}">Item Details</span></p>
+        <p><strong>사용 가능 지점:</strong> <span th:text="${item.place}">Place</span></p>
+        <p><strong>유효기간:</strong> <span th:text="${item.exp}">Expiration</span></p>
+        <p class="price">
+            최종 가격: <span class="final-price" th:text="${item.price - item.salePrice} + '원'">7000원</span>
+            <span class="details">
+        (* 원가: <span th:text="${item.price} + '원'">8000원</span>, 할인 금액:
+        <span th:text="${item.salePrice} + '원'">1000원</span>)
+    </span>
+        </p>
+
+
+        <p><strong>구매 수량:</strong> <span th:text="${quantity}">1</span></p>
+        <p>최종 가격: <span th:text="${(item.price - item.salePrice) * quantity} + ' 원'"></span></p>
+
+        <div class="total-price">
+            <p>결제 금액 <span th:text="${totalPrice}">0</span> 원</p>
+        </div>
+
+    </div>
+</div>
+
+<button id="paymentButton" onclick="startPaymentProcess()" class="btn btn-primary">결제하기</button>
+
+<!-- Include Footer -->
+<div th:insert="~{fragments/footer}"></div>
+
+
+<script th:inline="javascript">
+
+    var totalPrice = /*[[${totalPrice}]]*/ 0;  // 서버에서 전달된 totalPrice
+    var itemCode = /*[[${item.itemCode}]]*/ '';  // itemCode는 한 개의 값으로 수정
+    var itemQty = /*[[${quantity}]]*/ '';
+
+    function startPaymentProcess() {
+        createOrder(totalPrice, itemCode, itemQty);
+    }
+
+    function createOrder(amount, itemCode, itemQty) {
+        fetch('/api/pay/direct/purchase/create', {  // 경로 변경
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                itemCode: itemCode,  // itemCode와 itemQty를 직접 전달
+                itemQty: itemQty
+            })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.code === 1) {
+                requestPay(data.data.payCode, amount);
+            } else {
+                alert('주문 생성 실패!');
+            }
+        })
+        .catch(error => console.error('주문 생성 실패:', error.message));
+    }
+
+    function requestPay(payCode, amount) {
+        IMP.init('imp26375181');  // IAMPORT ID
+
+        IMP.request_pay({
+            channelKey: 'channel-key-eaa7a116-1cff-416f-899a-af3292888850',  // IAMPORT 채널 키
+            pay_method: 'card',
+            merchant_uid: payCode,
+            name: '상품 구매',
+            amount: amount,
+        }, function(response) {
+            if (response.success) {
+                completePayment(response.imp_uid, payCode);
+            } else {
+                alert('결제 실패: ' + response.error_msg);
+            }
+        });
+    }
+
+    function completePayment(impUid, payCode) {
+        fetch('/api/pay/payment/complete', {  // 동일한 경로 유지
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ impUid: impUid, payCode: payCode })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.code === 1) {
+                alert('결제가 성공적으로 완료되었습니다!');
+                window.location.href = '/page/pay';
+            } else {
+                alert('결제 검증 실패로 인한 결제 불가!');
+            }
+        })
+        .catch(error => {
+            console.error('결제 검증 실패:', error);
+            alert('결제 검증 실패!');
+        });
+    }
+</script>
+</body>
+</html>

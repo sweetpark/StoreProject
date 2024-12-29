@@ -1,0 +1,25 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.com" lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>메인페이지</title>
+    <style>
+        #main-content {
+            flex: 1; /* 남은 공간을 차지 */
+        }
+    </style>
+</head>
+<body>
+    <!-- Include Header -->
+    <div th:insert="~{fragments/header}"></div>
+
+    <!-- Main Content -->
+    <div id="main-content" class="container">
+        <h1>Welcome to the Movie Reserve Project</h1>
+        <p>메인 페이지 입니다.</p>
+    </div>
+
+    <!-- Include Footer -->
+    <div th:insert="~{fragments/footer}"></div>
+</body>
+</html>

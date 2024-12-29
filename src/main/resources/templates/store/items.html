@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Items</title>
+    <style>
+        .item-card {
+            border: 1px solid #ddd;
+            padding: 16px;
+            margin: 16px;
+            border-radius: 8px;
+            display: inline-block;
+            width: 300px;
+            text-align: center;
+        }
+        .item-card img {
+            max-width: 100%;
+            height: auto;
+        }
+        .item-card h3 {
+            margin: 8px 0;
+        }
+        .item-card p {
+            margin: 4px 0;
+        }
+        .item-card a {
+            text-decoration: none;
+            color: inherit;
+        }
+        .item-card a:hover {
+            text-decoration: underline;
+        }
+        #main-content {
+            flex: 1; /* 남은 공간을 차지 */
+        }
+    </style>
+</head>
+<body>
+
+<!-- Include Header -->
+<div th:insert="~{fragments/header}"></div>
+
+<!-- Main Content -->
+<div id="main-content" class="container">
+    <div>
+        <div class="item-card" th:each="item : ${items}">
+            <!-- 이미지에 링크 추가 -->
+            <a th:href="@{items/{id}(id=${item.itemCode})}">
+                <img th:src="@{${item.itemImage}}" alt="Item Image">
+            </a>
+            <!-- 제목에 링크 추가 -->
+            <a th:href="@{items/{id}(id=${item.itemCode})}">
+                <h3 th:text="${item.itemName}">Item Name</h3>
+                <p th:text="${item.itemDetail}">Item Detail</p>
+                <p>
+                    가격 :
+                    <span th:if="${item.salePrice != null}" th:text="${item.price} - ${item.salePrice}">가격</span>
+                </p>
+            </a>
+
+        </div>
+    </div>
+</div>
+
+<!-- Include Footer -->
+<div th:insert="~{fragments/footer}"></div>
+
+</body>
+</html>

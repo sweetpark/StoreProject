@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.com" lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CINE Q 회원가입</title>
+    <link href="/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        #main-content {
+            flex: 1; /* 남은 공간을 차지 */
+        }
+    </style>
+</head>
+
+<body>
+<!-- Include Header -->
+<div th:insert="~{fragments/header}"></div>
+
+<div id="main-content" class="container">
+    <form id="joinForm">
+        <div class="mb-3">
+            <label for="memberId" class="form-label">아이디</label>
+            <input type="text" class="form-control" id="memberId" placeholder="아이디를 입력해주세요">
+        </div>
+        <div class="mb-3">
+            <label for="pword" class="form-label">비밀번호</label>
+            <input type="password" class="form-control" id="pword" placeholder="비밀번호를 입력해주세요">
+        </div>
+        <div class="mb-3">
+            <label for="user" class="form-label">이름</label>
+            <input type="text" class="form-control" id="user" placeholder="이름을 입력해주세요">
+        </div>
+        <div class="mb-3">
+            <label for="email" class="form-label">이메일</label>
+            <input type="email" class="form-control" id="email" placeholder="이메일을 입력해주세요">
+        </div>
+        <div class="mb-3">
+            <label for="tel" class="form-label">전화번호</label>
+            <input type="text" class="form-control" id="tel" placeholder="전화번호를 입력해주세요">
+        </div>
+        <button type="button" class="btn btn-primary w-100 mb-2" id="joinButton">회원가입</button>
+    </form>
+</div>
+
+<!-- Include Footer -->
+<div th:insert="~{fragments/footer}"></div>
+
+<script src="/js/jquery-3.5.1.slim.min.js"></script>
+<script src="/js/bootstrap.min.js"></script>
+<script>
+    document.getElementById("joinButton").addEventListener("click", () => {
+        const memberId = document.getElementById("memberId").value.trim();
+        const password = document.getElementById("pword").value.trim();
+        const username = document.getElementById("user").value.trim();
+        const email = document.getElementById("email").value.trim();
+        const tel = document.getElementById("tel").value.trim();
+        const role = "CUSTOMER"; // 기본 역할 설정
+
+        // 유효성 검사
+        if (!memberId) {
+            alert("아이디를 입력해주세요.");
+            return;
+        }
+        if (!password) {
+            alert("비밀번호를 입력해주세요.");
+            return;
+        }
+        if (!username) {
+            alert("이름을 입력해주세요.");
+            return;
+        }
+        if (!email) {
+            alert("이메일을 입력해주세요.");
+            return;
+        }
+        if (!tel) {
+            alert("전화번호를 입력해주세요.");
+            return;
+        }
+
+        const memberData = {
+            memberId: memberId,
+            password: password,
+            username: username,
+            role: role,
+            email: email,
+            tel: tel
+        };
+
+        fetch('/api/members/join', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(memberData),
+        })
+        .then(response => {
+            if (response.status === 201) {
+                alert("회원가입 성공.");
+                window.location.href = '/'; // 가입 성공 후 메인 페이지로 이동
+            } else {
+                alert("회원가입에 실패했습니다.");
+            }
+        })
+        .catch(error => {
+            console.error(error);
+            alert("회원가입 중 오류가 발생했습니다.");
+        });
+    });
+</script>
+</body>
+</html>

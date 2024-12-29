@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.com" lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CINE Q Login Modal</title>
+    <link href="/css/bootstrap.min.css" rel="stylesheet">
+</head>
+<script src="/js/jquery-3.5.1.slim.min.js"></script>
+<script src="/js/bootstrap.min.js"></script>
+
+
+<script>
+    const onLogin = () => {
+        const username = document.getElementById("username").value;
+        const password = document.getElementById("password").value;
+
+        // Create form data
+        const formData = new FormData();
+        formData.append("username", username);
+        formData.append("password", password);
+
+        fetch('/login', {
+            method: 'POST',
+            body: formData
+        })
+        .then(response => {
+            if (response.status === 200) {
+                alert("로그인 성공.");
+                sessionStorage.setItem("username", username);  // Store username in session storage
+                sessionStorage.setItem("loggedIn", "true");
+            } else {
+                alert("인증에 실패하였습니다.");
+                throw new Error('Login failed');
+            }
+        })
+        .then(data => {
+            sessionStorage.setItem("username", username);  // Store username in session storage
+
+            // Update UI for logged in state
+            document.getElementById('loginModal').style.display = 'none';
+            document.getElementById('navLoginLink').style.display = 'none';
+            document.getElementById('navSignupLink').style.display = 'none';
+            document.getElementById('navUsername').style.display = 'inline';
+            document.getElementById('navReserveLink').style.display = 'inline';
+            document.getElementById('navLogoutLink').style.display = 'inline';
+
+            // Update account name in the navigation bar
+            document.getElementById('navUsername').textContent = username;
+
+            window.location.href = '/';  // Redirect to main page
+        })
+        .catch(error => console.error(error));
+    };
+
+
+    window.addEventListener('load', () => {
+        const username = sessionStorage.getItem('username');
+        const loggedIn = sessionStorage.getItem('loggedIn');
+
+        // Ensure modal is hidden by default
+        document.getElementById('loginModal').style.display = 'none';
+
+        if (loggedIn === 'true') {
+            // Update the UI for logged-in state
+            document.getElementById('navLoginLink').style.display = 'none';
+            document.getElementById('navSignupLink').style.display = 'none';
+            document.getElementById('navUsername').style.display = 'inline';
+            document.getElementById('navReserveLink').style.display = 'inline';
+            document.getElementById('navLogoutLink').style.display = 'inline';
+
+            // Update account name in the navigation bar
+            document.getElementById('navUsername').textContent = username;
+        } else {
+            // Show login/signup if not logged in
+            document.getElementById('navLoginLink').style.display = 'inline';
+            document.getElementById('navSignupLink').style.display = 'inline';
+            document.getElementById('navUsername').style.display = 'none';
+            document.getElementById('navReserveLink').style.display = 'inline';
+            document.getElementById('navLogoutLink').style.display = 'none';
+        }
+    });
+</script>
+
+
+<body>
+    <!-- Modal Structure -->
+    <div class="modal fade" id="loginModal" tabindex="-1" role="dialog" aria-labelledby="loginModalLabel" aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title" id="loginModalLabel">CINE Q</h5>
+                    <button type="button" class="btn-danger" data-dismiss="modal" aria-label="Close">닫기</button>
+                </div>
+                <div class="modal-body">
+                    <!-- Tab Navigation -->
+                    <ul class="nav nav-tabs mb-4" role="tablist">
+                        <li class="nav-item">
+                            <a class="nav-link active" data-bs-toggle="tab" href="#login" role="tab">회원</a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-link" data-bs-toggle="tab" href="#non-member" role="tab">비회원</a>
+                        </li>
+                    </ul>
+
+                    <!-- Login Form -->
+                    <div class="tab-content">
+                        <div class="tab-pane fade show active" id="login" role="tabpanel">
+                            <form action="/login" method="post">
+                                <div class="mb-3">
+                                    <label for="username" class="form-label">아이디</label>
+                                    <input type="text" class="form-control" name="username" id="username" placeholder="아이디를 입력해주세요">
+                                </div>
+                                <div class="mb-3">
+                                    <label for="password" class="form-label">비밀번호</label>
+                                    <input type="password" class="form-control" name="password" id="password" placeholder="영문, 숫자 포함 8자 이상">
+                                </div>
+                                <div class="form-check mb-3 text-start">
+                                    <input type="checkbox" class="form-check-input" id="remember">
+                                    <label class="form-check-label" for="remember">아이디 저장</label>
+                                </div>
+                                <button type="button" class="btn btn-danger w-100 mb-2" onclick="onLogin()">로그인</button>
+                                <a href="#" class="text-muted d-block mb-3">아이디(이메일) 찾기 | 비밀번호 찾기</a>
+                                <a class="btn btn-secondary w-100 mb-2 nav-link" id="navSignupLink" th:href="@{/page/join}">회원가입</a>
+                                <button type="button" class="btn btn-warning w-100 mb-3">📱 휴대폰 번호로 로그인</button>
+                            </form>
+                        </div>
+                        <div class="tab-pane fade" id="non-member" role="tabpanel">
+                            <!-- Non-member content placeholder -->
+                        </div>
+                    </div>
+
+                    <!-- Social Login -->
+                    <p class="text-muted">소셜 계정으로 간편 로그인</p>
+                    <div class="d-flex justify-content-center mb-4">
+                        <button type="button" class="btn btn-success me-2" onclick="window.location.href='https://nid.naver.com/oauth2.0/authorize?response_type=code&client_id=gi885FWhfVBsP7RPKuAP&redirect_uri=http://localhost:8089/naver/callback&state=STATE'">
+                            네이버
+                        </button>
+                        <button type="button" class="btn btn-warning">카카오톡</button>
+                    </div>
+                </div>
+                <!-- Footer Banner -->
+                <div class="modal-footer">
+                    <p class="text-muted">2024.11.06</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+
+</body>
+</html>

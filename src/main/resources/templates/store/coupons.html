@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Payment Information</title>
+    <link rel="stylesheet" href="/css/style.css">
+    <!-- Optional: Link to your CSS file -->
+    <style>
+        #main-content {
+            flex: 1; /* 남은 공간을 차지 */
+        }
+        .container {
+            margin: 0 auto;
+            padding: 20px;
+            max-width: 800px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+
+        table, th, td {
+            border: 1px solid #ddd;
+        }
+
+        th, td {
+            padding: 10px;
+            text-align: center;
+        }
+
+        thead {
+            background-color: #f4f4f4;
+        }
+
+        tbody tr td[colspan="4"] {
+            text-align: center;
+            font-style: italic;
+            color: #888;
+        }
+
+        tbody tr.empty-row td {
+            height: 50px;
+        }
+    </style>
+    <script>
+        document.addEventListener("DOMContentLoaded", function() {
+            const useCouponButton = document.getElementById("useCouponButton");
+
+            if (useCouponButton) {
+                useCouponButton.addEventListener("click", function() {
+                    const cpId = useCouponButton.getAttribute("data-cp-id");
+
+                    fetch(`/api/coupon/${cpId}/use`, {
+                        method: 'PUT',
+                    })
+                    .then(response => {
+                        if (response.ok) {
+                            location.reload();
+                        } else {
+                            alert('쿠폰 사용에 실패했습니다.');
+                        }
+                    })
+                    .catch(error => {
+                        alert('쿠폰 사용 중 오류가 발생했습니다.');
+                        console.error(error);
+                    });
+                });
+            }
+        });
+    </script>
+</head>
+<body>
+<!-- Include Header -->
+<div th:insert="~{fragments/header}"></div>
+
+
+<div id="main-content" class="container">
+    <h1>쿠폰 내역</h1>
+    <table>
+        <thead>
+        <tr>
+            <th>쿠폰 상태</th>
+            <th>쿠폰 ID</th>
+            <th>상품 이름</th>
+            <th>상품 이미지</th>
+            <th>상품 수량</th>
+            <th>발급일자</th>
+            <th>액션</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:if="${coupons.isEmpty()}" class="empty-row">
+            <td colspan="7">쿠폰 내역이 없습니다.</td>
+        </tr>
+        <!-- Iterate through the coupon list -->
+        <tr th:each="coupon : ${coupons}">
+            <td th:switch="${coupon.cpStatus}">
+                <span th:case="1">쿠폰 사용완료</span>
+                <span th:case="2">쿠폰 사용가능</span>
+                <span th:case="3">쿠폰 만료</span>
+                <span th:case="*">상태 미정</span>
+            </td>
+            <td th:text="${coupon.cpId}"></td>
+            <td th:text="${coupon.item.itemName}"></td>
+            <td><img th:src="${coupon.item.itemImage}" alt="상품 이미지" style="max-width: 100px; max-height: 100px;"></td>
+            <td th:text="${coupon.itemQuantity}"></td>
+            <td th:text="${#temporals.format(coupon.cpDate, 'yyyy-MM-dd HH:mm')}"></td>
+            <td>
+                <button th:if="${coupon.cpStatus == 2}"
+                        id="useCouponButton"
+                        th:data-cp-id="${coupon.cpId}">
+                    쿠폰 사용
+                </button>
+            </td>
+        </tr>
+        </tbody>
+    </table>
+</div>
+
+
+<!-- Include Header -->
+<div th:insert="~{fragments/footer}"></div>
+</body>
+</html>

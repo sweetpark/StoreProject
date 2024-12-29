@@ -1,0 +1,285 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>장바구니</title>
+    <style>
+        .cart-container {
+            width: 80%;
+            margin: 0 auto;
+            padding: 20px;
+            border: 1px solid #ccc;
+        }
+        .cart-item {
+            display: flex;
+            margin-bottom: 20px;
+            border-bottom: 1px solid #ccc;
+            padding-bottom: 10px;
+        }
+        .item-image {
+            width: 150px;
+            height: 150px;
+            margin-right: 20px;
+        }
+        .item-details {
+            flex-grow: 1;
+        }
+        .item-details p {
+            margin: 5px 0;
+        }
+        #main-content {
+            flex: 1;
+        }
+        .total-price {
+            font-weight: bold;
+            margin-top: 20px;
+        }
+        .item-details {
+            background-color: #f9f9f9;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            max-width: 600px;
+            margin: 10px auto;
+            font-family: 'Arial', sans-serif;
+        }
+        .item-details h3.item-name {
+            font-size: 24px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 10px;
+        }
+        .item-details p {
+            font-size: 16px;
+            color: #555;
+            margin-bottom: 8px;
+        }
+        .item-details p span {
+            font-weight: bold;
+            color: #333;
+        }
+        .item-details .item-price,
+        .item-details .item-sale-price {
+            color: #e74c3c; /* Red for price */
+        }
+        .item-details .final-price {
+            font-size: 18px;
+            font-weight: bold;
+            color: #27ae60; /* Green for final price */
+            margin-top: 15px;
+        }
+        .item-details h3.item-name:hover {
+            text-decoration: underline;
+            cursor: pointer;
+        }
+
+    </style>
+    <script type="text/javascript">
+        let selectedItems = []; // Selected items
+        let totalPrice = 0; // Total price
+
+        // Update total price and selected items
+        function updateTotalPrice() {
+            selectedItems = [];
+            totalPrice = 0;
+
+            document.querySelectorAll('.item-checkbox').forEach((checkbox) => {
+                if (checkbox.checked) {
+                    const itemCode = checkbox.value;
+                    const itemPrice = parseFloat(checkbox.dataset.price); // Convert to number
+                    const salePrice = checkbox.dataset.saleprice ? parseFloat(checkbox.dataset.saleprice) : 0;
+                    const quantity = parseInt(checkbox.dataset.quantity); // Convert to integer
+                    const cartCode = checkbox.dataset.cartcode;
+
+                    // Calculate final price (price - discount price) * quantity
+                    const finalPrice = (itemPrice - salePrice) * quantity;
+                    selectedItems.push(cartCode);
+                    totalPrice += finalPrice;
+                }
+            });
+
+            // Update total price on the page
+            document.getElementById('totalPrice').textContent = totalPrice.toLocaleString() + ' 원';
+
+            // Set value of hidden input with selected items
+            document.getElementById('selectedItemsInput').value = JSON.stringify(selectedItems);
+
+            // Show 'Buy Now' button if there are selected items
+            if (selectedItems.length > 0) {
+                document.getElementById('buyNowButton').style.display = 'block';
+            } else {
+                document.getElementById('buyNowButton').style.display = 'none';
+            }
+        }
+
+        function updateQuantity(cartCode) {
+            // 수량 입력을 찾고, 요소가 존재하는지 확인
+            const quantityInput = document.querySelector(`input[name='quantity_${cartCode}']`);
+
+            if (!quantityInput) {
+                console.error(`Input element with name 'quantity_${cartCode}' not found.`);
+                return;
+            }
+
+            // 수량이 올바르게 입력되었는지 확인
+            const updatedQuantity = parseInt(quantityInput.value);
+            if (isNaN(updatedQuantity) || updatedQuantity < 1) {
+                console.error("Invalid quantity.");
+                return;
+            }
+
+
+            // 가격 정보를 input의 data 속성에서 가져옴
+            const itemPrice = parseFloat(quantityInput.dataset.price);
+            const salePrice = quantityInput.dataset.saleprice ? parseFloat(quantityInput.dataset.saleprice) : 0;
+
+            // 요청 보낼 데이터 (cart 정보 포함)
+            const requestData = {
+                cartCode: cartCode, // 장바구니 코드
+                cartQty: updatedQuantity, // 새 수량
+                itemCode: quantityInput.dataset.itemcode, // itemCode (input에서 가져옴)
+                cartStatus: 1, // 예시로 1을 사용 (상태를 변경할 경우 수정 필요)
+                cartDate: new Date().toISOString() // 현재 날짜와 시간 (서버에서 LocalDateTime으로 처리)
+            };
+
+            // PUT 요청 보내기
+            fetch('/api/cart', {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify(requestData)  // JSON 데이터로 요청 본문 구성
+            })
+            .then(response => response.json())  // 응답을 JSON 형태로 파싱
+            .then(data => {
+                // 서버에서 받은 응답 데이터 처리
+                if (data.code === 1) {
+                    // 응답 데이터에서 새 수량과 가격 계산
+                    const cart = data.data;  // 응답의 data 부분에서 cart 정보 가져오기
+                    const finalPrice = (cart.item.price - cart.item.salePrice) * cart.cartQty;
+
+                    // 최종 가격 업데이트
+                    const finalPriceElement = document.querySelector(`#finalPrice_${cartCode}`);
+                    if (finalPriceElement) {
+                        finalPriceElement.textContent = finalPrice.toLocaleString() + ' 원';
+                    }
+
+                    // 수량 업데이트
+                    const quantityDisplay = document.querySelector(`span[th\\:text='${cart.cartQty}']`);
+                    if (quantityDisplay) {
+                        quantityDisplay.textContent = cart.cartQty;
+                    }
+
+                    // 총 가격을 다시 계산
+                    updateTotalPrice();
+                    location.reload();
+                } else {
+                    console.error('장바구니 업데이트 실패:', data.msg);
+                }
+            })
+            .catch(error => {
+                console.error('수량 업데이트 중 오류 발생:', error);
+            });
+        }
+
+        function deleteItem(cartCode) {
+            // Prepare the data to send with the request
+            const requestData = {
+                cartCode: cartCode,
+                cartStatus: 3  // 삭제할 때는 cartStatus를 3으로 설정
+            };
+
+            // Send DELETE request to the server
+            fetch('/api/cart', {
+                method: 'DELETE',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(requestData)
+            })
+            .then(response => response.json())
+            .then(data => {
+                // Check if the response code is 1 (success)
+                if (data.code === 1) {
+                    location.reload();
+                } else {
+                    // Handle error if response code is not 1
+                    alert("삭제 실패: " + data.msg);
+                }
+            })
+            .catch(error => {
+                console.error('삭제 요청 중 오류 발생:', error);
+                alert("삭제 요청 중 오류가 발생했습니다.");
+            });
+        }
+    </script>
+</head>
+<body>
+<!-- Header Include -->
+<div th:insert="~{fragments/header}"></div>
+
+<!-- Cart Items Section -->
+<div id="main-content" class="container">
+    <h1>장바구니</h1>
+
+    <!-- Check if cartData is not null -->
+    <div th:if="${cartData != null}">
+        <form id="cart-form" th:action="@{/page/pay}" method="post">
+            <div th:each="cart : ${cartData}" class="cart-item" data-cartCode="${cart.cartCode}">
+                <img th:src="@{${cart.item.itemImage}}" alt="상품 이미지" class="item-image"/>
+                <div class="item-details">
+                    <h3 th:text="${cart.item.itemName}" class="item-name"></h3>
+                    <label>
+                        <input type="checkbox" th:name="'selectedItems'" th:value="${cart.item.itemCode}" th:data-price="${cart.item.price}"
+                               th:data-salePrice="${cart.item.salePrice}" th:data-quantity="${cart.cartQty}" th:data-cartCode="${cart.cartCode}"
+                               class="item-checkbox" onclick="updateTotalPrice()"/>
+                        상품 선택
+                    </label>
+                    <p>장바구니번호: <span th:text="${cart.cartCode}"></span></p>
+                    <p>상품 유형: <span th:text="${cart.item.itemType}"></span></p>
+                    <p>상세 정보: <span th:text="${cart.item.itemDetail}"></span></p>
+                    <p>사용 가능한 장소: <span th:text="${cart.item.place}"></span></p>
+                    <p>유효 기간: <span th:text="${cart.item.exp}"></span></p>
+                    <p>가격: <span th:text="${cart.item.price} + ' 원'"></span></p>
+                    <p>할인 가격: <span th:text="${cart.item.salePrice} + ' 원'"></span></p>
+                    <p>
+                        수량:
+                        <input type="number" th:name="'quantity_' + ${cart.cartCode}"
+                               th:value="${cart.cartQty}"
+                               th:data-itemcode="${cart.item.itemCode}"
+                               th:data-price="${cart.item.price}"
+                               th:data-salePrice="${cart.item.salePrice}"
+                               class="item-quantity"/>
+                        <button type="button" th:attr="onclick='updateQuantity(' + ${cart.cartCode} + ')'" >수량 업데이트</button>
+                    </p>
+                    <p>최종 가격: <span th:id="'finalPrice_' + ${cart.cartCode}" th:text="${(cart.item.price - cart.item.salePrice) * cart.cartQty} + ' 원'"></span></p>
+                    <!-- Select checkbox for the item -->
+
+                    <!-- Delete button -->
+                    <button type="button" th:attr="onclick='deleteItem(' + ${cart.cartCode} + ')'" class="btn btn-warning">장바구니에서 삭제</button>
+                </div>
+            </div>
+
+            <!-- Total Price Calculation -->
+            <div class="total-price">
+                <p>선택된 상품의 총 합계: <span id="totalPrice">0</span></p>
+            </div>
+
+            <!-- Buy Now Button -->
+            <button type="submit" form="cart-form" id="buyNowButton" style="display:none;">구매하기</button>
+
+            <!-- Hidden input for selected items -->
+            <input type="hidden" name="selectedItems" id="selectedItemsInput"/>
+        </form>
+    </div>
+
+    <!-- If cartData is null -->
+    <div th:if="${cartData == null}">
+        <p>장바구니가 없습니다.</p>
+    </div>
+</div>
+
+<!-- Footer Include -->
+<div th:insert="~{fragments/footer}"></div>
+</body>
+</html>

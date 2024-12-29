@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>장바구니 결제</title>
+    <script type="text/javascript" src="https://code.jquery.com/jquery-1.12.4.min.js"></script>
+    <script src="https://cdn.iamport.kr/v1/iamport.js"></script>
+    <style>
+        .item-details {
+            background-color: #f9f9f9;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            max-width: 600px;
+            margin: 10px auto;
+            font-family: 'Arial', sans-serif;
+        }
+
+        .item-details h3.item-name {
+            font-size: 24px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 10px;
+        }
+
+        .item-details p {
+            font-size: 16px;
+            color: #555;
+            margin-bottom: 8px;
+        }
+
+        .item-details p span {
+            font-weight: bold;
+            color: #333;
+        }
+
+        .item-details .item-price,
+        .item-details .item-sale-price {
+            color: #e74c3c; /* Red color for prices */
+        }
+
+        .item-details .final-price {
+            font-size: 18px;
+            font-weight: bold;
+            color: #27ae60; /* Green color for final price */
+            margin-top: 15px;
+        }
+
+        /* Add hover effect on item name */
+        .item-details h3.item-name:hover {
+            text-decoration: underline;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body>
+
+<!-- Include Header -->
+<div th:insert="~{fragments/header}"></div>
+
+<!-- Item Detail Section -->
+<div id="main-content" class="container">
+    <h1>결제준비</h1>
+
+    <!-- Check if cartData is not null or empty -->
+    <div th:if="${cartItems != null}">
+        <div th:each="cart : ${cartItems}" class="cart-item">
+            <img th:src="@{${cart.item.itemImage}}" alt="상품 이미지" class="item-image"/>
+            <div class="item-details">
+                <h3 th:text="${cart.item.itemName}"></h3>
+                <p>상품 유형: <span th:text="${cart.item.itemType}"></span></p>
+                <p>상세 정보: <span th:text="${cart.item.itemDetail}"></span></p>
+                <p>사용 가능 장소: <span th:text="${cart.item.place}"></span></p>
+                <p>유효 기간: <span th:text="${cart.item.exp}"></span></p>
+                <p>가격: <span th:text="${cart.item.price} + ' 원'"></span></p>
+                <p>할인 가격: <span th:text="${cart.item.salePrice} + ' 원'"></span></p>
+                <p>수량: <span th:text="${cart.cartQty}"></span></p>
+                <p>최종 가격: <span th:text="${(cart.item.price - cart.item.salePrice) * cart.cartQty} + ' 원'"></span></p>
+            </div>
+        </div>
+
+        <!-- Total Price Calculation -->
+        <div class="total-price">
+            <p>결제 금액 <span th:text="${totalPrice}">0</span> 원</p>
+        </div>
+
+    </div>
+
+    <!-- If cartData is null or empty -->
+    <div th:if="${cartItems == null}">
+        <p>결제할 상품이 존재하지 않습니다</p>
+    </div>
+</div>
+
+<button id="paymentButton" onclick="startPaymentProcess()" class="btn btn-primary">결제하기</button>
+
+<!-- Include Footer -->
+<div th:insert="~{fragments/footer}"></div>
+
+<script th:inline="javascript">
+
+    var totalPrice = /*[[${totalPrice}]]*/ 0;  // 서버에서 전달된 totalPrice
+    var cartCodes = /*[[${cartCodes}]]*/ [];
+
+
+    function startPaymentProcess() {
+        createOrder(totalPrice, cartCodes);
+    }
+
+    function createOrder(amount, cartCodes) {
+        fetch('/api/pay/cart/purchase/create', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(cartCodes.map(cartCode => ({ cartCode: cartCode }))) // cartCodes를 서버에 전달할 형식으로 변환
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.code === 1) {
+                requestPay(data.data.payCode, amount);
+            } else {
+                alert('주문 생성 실패!');
+            }
+        })
+        .catch(error => console.error('주문 생성 실패:', error.message));
+    }
+
+    function requestPay(payCode, amount) {
+        IMP.init('imp26375181');  // IAMPORT ID
+
+        IMP.request_pay({
+            channelKey: 'channel-key-eaa7a116-1cff-416f-899a-af3292888850',  // IAMPORT 채널 키
+            pay_method: 'card',
+            merchant_uid: payCode,
+            name: '상품 구매',
+            amount: amount,
+        }, function(response) {
+            if (response.success) {
+                completePayment(response.imp_uid, payCode);
+            } else {
+                alert('결제 실패: ' + response.error_msg);
+            }
+        });
+    }
+
+    function completePayment(impUid, payCode) {
+        fetch('/api/pay/payment/complete', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ impUid: impUid, payCode: payCode })
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.code === 1) {
+                alert('결제가 성공적으로 완료되었습니다!');
+                window.location.href = '/page/pay';
+            } else {
+                alert('결제 검증 실패로 인한 결제 불가!');
+            }
+        })
+        .catch(error => {
+            console.error('결제 검증 실패:', error);
+            alert('결제 검증 실패!');
+        });
+    }
+</script>
+</body>
+</html>

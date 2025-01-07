@@ -21,7 +21,7 @@ public class ItemDataInitializer implements ApplicationRunner {
         File ticketFile = new File("/images/ticket_640.png");
         File comboFile = new File("/images/popcorn-ticket_640.png");
 
-//        itemService.deleteAll();
+        itemService.deleteAll();
         List<Item> existingItems = itemService.itemFindAll();
 
         //itemCode값은 정적인 이미지 1개당 적용 (기본키이므로, 중복안되게 설정)
@@ -30,7 +30,7 @@ public class ItemDataInitializer implements ApplicationRunner {
                     1, ItemType.FOOD,
                     "팝콘","팝콘",
                     ItemPlaceType.NATIONWIDE, ExpConfig.dateSet(120),
-                    8000,1000,popcornFile.getPath(),
+                    8000,7900,popcornFile.getPath(),
                     ItemStatus.PROGRESS);
 
             Item popcornItem2 = new Item(

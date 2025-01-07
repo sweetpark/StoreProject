@@ -26,6 +26,7 @@ import project.movie.store.dto.cart.PurchaseByOneDto;
 import project.movie.store.dto.pay.PayRespDto;
 import project.movie.store.repository.PayDetailRepository;
 import project.movie.store.repository.PayRepository;
+import project.movie.store.repository.redis.RedisService;
 
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
@@ -46,8 +47,9 @@ public class PayService {
     private final IamPortClient iamPortClient;
     private final ItemService itemService;
     private final CartService cartService;
+    private final RedisService redisService;
 
-
+    //Redis도입
     @Transactional
     public PaymentRequestDto payCreate(List<CartPurchaseDto> cartPurchaseDtos, String memberId){
         Member findMember = memberService.getByMemberId(memberId);
@@ -61,7 +63,6 @@ public class PayService {
         pay.setPayDate(LocalDateTime.now());
         pay.setPayStatus(PayStatus.CART_CREATE);
         pay.setPayPrice(0);
-        payRepository.save(pay);
 
         for( CartPurchaseDto cartPurchaseDto : cartPurchaseDtos){
             Cart findCart =  cartService.findByCartCode(cartPurchaseDto.getCartCode());
@@ -69,12 +70,13 @@ public class PayService {
             payDetail.setPay(pay);
             payDetail.setItem(findCart.getItem());
             payDetail.setCartQty(findCart.getCartQty());
-            payDetailRepository.save(payDetail);
+            pay.addPayDetail(payDetail);
+
             totalPrice += ((findCart.getItem().getPrice() - findCart.getItem().getSalePrice()) * findCart.getCartQty());
         }
-
         pay.setPayPrice(totalPrice);
-        payRepository.save(pay);
+
+        redisService.saveRedis(pay);
 
         PaymentRequestDto paymentRequestDto = new PaymentRequestDto();
         paymentRequestDto.setPayCode(pay.getPayCode());
@@ -86,6 +88,7 @@ public class PayService {
         return paymentRequestDto;
     }
 
+    //CHECKME) Redis 도입
     @Transactional
     public PaymentRequestDto payCreateByOne(PurchaseByOneDto purchaseByOneDto, String memberId){
         Member findMember = memberService.getByMemberId(memberId);
@@ -98,19 +101,18 @@ public class PayService {
         pay.setPayDate(LocalDateTime.now());
         pay.setPayStatus(PayStatus.DIRECT_CREATE);
         pay.setPayPrice(0);
-        payRepository.save(pay);
 
         Item findItem =  itemService.itemFindByItemCode(purchaseByOneDto.getItemCode());
         PayDetail payDetail = new PayDetail();
         payDetail.setPay(pay);
         payDetail.setItem(findItem);
         payDetail.setCartQty(purchaseByOneDto.getItemQty());
-        payDetailRepository.save(payDetail);
+        pay.addPayDetail(payDetail);
         totalPrice += ((findItem.getPrice() - findItem.getSalePrice()) * purchaseByOneDto.getItemQty());
 
 
         pay.setPayPrice(totalPrice);
-        payRepository.save(pay);
+        redisService.saveRedis(pay);
 
         PaymentRequestDto paymentRequestDto = new PaymentRequestDto();
         paymentRequestDto.setPayCode(pay.getPayCode());
@@ -140,7 +142,8 @@ public class PayService {
 
             if("paid".equals(response.getResponse().getStatus())){
 
-                Pay findPay = getFindByPayCode(response.getResponse().getMerchant_uid());
+                //CHECKME) redis로 찾기
+                Pay findPay = redisService.getFromRedis(response.getResponse().getMerchant_uid());
 
 
                 if (findPay == null) {
@@ -162,6 +165,8 @@ public class PayService {
                 findPay.setPayStatus(PayStatus.PAID);
                 findPay.setImpCode(dto.getImpUid());
 
+                //결제 성공시 redis 삭제
+                redisService.deleteFromRedis(findPay.getPayCode());
                 payRepository.save(findPay);
 
                 // Save coupon

@@ -7,6 +7,7 @@ import lombok.Setter;
 import project.movie.member.domain.Member;
 
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
 
@@ -44,12 +45,17 @@ public class Pay {
 
     @JsonManagedReference
     @OneToMany(mappedBy = "pay", cascade= CascadeType.ALL)
-    private List<PayDetail> payDetails;
+    private List<PayDetail> payDetails = new ArrayList<>();
 
     public Pay(){};
 
     public void generatePayCode(){
         String payCode = UUID.randomUUID().toString();
         this.payCode = payCode;
+    }
+
+    public void addPayDetail(PayDetail payDetail){
+        payDetails.add(payDetail);
+        payDetail.setPay(this);
     }
 }
